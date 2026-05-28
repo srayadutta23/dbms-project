@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crime Pattern Analysis System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1d28;
+    --bg4: #222637;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: #8b8fa8;
+    --text3: #565a72;
+    --accent: #4f6ef7;
+    --accent2: #7c9eff;
+    --red: #f05252;
+    --amber: #f59e0b;
+    --green: #10b981;
+    --teal: #06b6d4;
+    --purple: #8b5cf6;
+    --coral: #f97316;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 1px;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 12px 10px;
+    overflow-y: auto;
+  }
+
+  .nav-section {
+    margin-bottom: 20px;
+  }
+
+  .nav-section-label {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 8px;
+    margin-bottom: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 12.5px;
+    font-weight: 400;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover {
+    background: var(--bg3);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .nav-item.active {
+    background: rgba(79,110,247,0.12);
+    color: var(--accent2);
+    border-color: rgba(79,110,247,0.2);
+    font-weight: 500;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+  }
+
+  .nav-item.active .nav-dot { background: var(--accent); }
+
+  .sidebar-footer {
+    padding: 12px 10px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .page-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .page-breadcrumb {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 1px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+
+  .btn:hover {
+    background: var(--bg4);
+    color: var(--text);
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .btn-primary:hover { background: #6070f5; }
+
+  .btn-danger {
+    background: rgba(240,82,82,0.1);
+    color: var(--red);
+    border-color: rgba(240,82,82,0.2);
+  }
+
+  .btn-danger:hover { background: rgba(240,82,82,0.18); }
+
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    font-family: var(--mono);
+  }
+
+  .badge-red    { background: rgba(240,82,82,0.12);   color: #f87171; }
+  .badge-amber  { background: rgba(245,158,11,0.12);  color: #fbbf24; }
+  .badge-green  { background: rgba(16,185,129,0.12);  color: #34d399; }
+  .badge-blue   { background: rgba(79,110,247,0.12);  color: var(--accent2); }
+  .badge-purple { background: rgba(139,92,246,0.12);  color: #a78bfa; }
+  .badge-teal   { background: rgba(6,182,212,0.12);   color: #22d3ee; }
+
+  .page-content { padding: 24px; flex: 1; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--accent));
+  }
+
+  .metric-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: var(--mono);
+    margin-bottom: 4px;
+    line-height: 1.1;
+  }
+
+  .metric-sub { font-size: 11px; color: var(--text3); }
+
+  .metric-icon {
+    position: absolute;
+    top: 14px; right: 14px;
+    font-size: 20px;
+    opacity: 0.25;
+  }
+
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .chart-sub {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+
+  .chart-area { position: relative; height: 200px; }
+
+  .table-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-title { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .search-input {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text);
+    font-family: var(--sans);
+    width: 200px;
+    outline: none;
+  }
+
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: rgba(79,110,247,0.5); }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    padding: 9px 18px;
+    text-align: left;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    font-weight: 500;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+
+  tbody td {
+    padding: 11px 18px;
+    font-size: 12px;
+    color: var(--text2);
+    vertical-align: middle;
+  }
+
+  tbody td:first-child { color: var(--text); font-weight: 500; font-family: var(--mono); }
+
+  .action-btns { display: flex; gap: 6px; }
+
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-select {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--sans);
+    outline: none;
+    cursor: pointer;
+    min-width: 140px;
+  }
+
+  .filter-select:focus { border-color: rgba(79,110,247,0.5); color: var(--text); }
+  .filter-select option { background: var(--bg2); color: var(--text); }
+
+  input[type="date"] {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--sans);
+    outline: none;
+    cursor: pointer;
+    color-scheme: dark;
+  }
+
+  input[type="date"]:focus { border-color: rgba(79,110,247,0.5); }
+
+  .form-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 680px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--sans);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: rgba(79,110,247,0.5);
+    background: var(--bg4);
+  }
+
+  .form-input::placeholder { color: var(--text3); }
+  .form-select option { background: var(--bg2); color: var(--text); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .hotspot-list { list-style: none; }
+
+  .hotspot-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .hotspot-item:last-child { border-bottom: none; }
+
+  .hotspot-rank {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .hotspot-name { flex: 1; font-size: 12.5px; color: var(--text); font-weight: 500; }
+
+  .hotspot-bar-wrap {
+    width: 100px;
+    height: 4px;
+    background: var(--bg4);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .hotspot-bar {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.6s ease;
+  }
+
+  .hotspot-count {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .insight-box {
+    background: rgba(79,110,247,0.06);
+    border: 1px solid rgba(79,110,247,0.2);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 14px;
+  }
+
+  .insight-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .insight-text { font-size: 12px; color: var(--text2); line-height: 1.7; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    width: 560px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-head {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title { font-size: 14px; font-weight: 600; color: var(--text); }
+
+  .modal-close {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.1s;
+  }
+
+  .modal-close:hover { background: var(--bg4); color: var(--text); }
+  .modal-body { padding: 20px 22px; }
+
+  .modal-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .modal-form-grid .full { grid-column: 1 / -1; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    padding: 12px 18px;
+    font-size: 12.5px;
+    color: var(--text);
+    z-index: 999;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.25s;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    max-width: 300px;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .report-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .report-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .report-card:hover {
+    border-color: rgba(79,110,247,0.3);
+    background: var(--bg3);
+  }
+
+  .report-icon { font-size: 24px; margin-bottom: 12px; }
+  .report-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .report-desc { font-size: 11.5px; color: var(--text3); line-height: 1.6; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  .no-data {
+    padding: 40px;
+    text-align: center;
+    color: var(--text3);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .heatmap-row {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 3px;
+    align-items: center;
+  }
+
+  .heatmap-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .heatmap-cell {
+    flex: 1;
+    height: 20px;
+    border-radius: 3px;
+    background: var(--bg4);
+    transition: opacity 0.2s;
+    position: relative;
+    cursor: default;
+  }
+
+  .heatmap-cell:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 3px 7px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text2);
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .heatmap-col-labels {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 4px;
+    padding-left: 36px;
+  }
+
+  .heatmap-col-label {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  /* Spinner for loading state */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <div class="logo-icon">🔍</div>
+      <div>
+        <div class="logo-text">CrimePS</div>
+        <div class="logo-sub">v2.4.1 · ADMIN</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-label">MAIN</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <div class="nav-dot"></div> Dashboard
+      </div>
+      <div class="nav-item" onclick="navigate('crimes')">
+        <div class="nav-dot"></div> Crime Records
+      </div>
+      <div class="nav-item" onclick="navigate('add')">
+        <div class="nav-dot"></div> Add Crime
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">ANALYTICS</div>
+      <div class="nav-item" onclick="navigate('analysis')">
+        <div class="nav-dot"></div> Pattern Analysis
+      </div>
+      <div class="nav-item" onclick="navigate('heatmap')">
+        <div class="nav-dot"></div> Heatmap
+      </div>
+      <div class="nav-item" onclick="navigate('reports')">
+        <div class="nav-dot"></div> Reports
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div>DB: crimes_db · MySQL</div>
+    <div id="connStatus" style="margin-top:4px;color:var(--amber)">● Connecting...</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="page-breadcrumb" id="pageCrumb">system / overview</div>
+    </div>
+    <div class="topbar-actions">
+      <div id="globalSearch" style="position:relative;">
+        <input class="search-input" id="globalSearchInput" placeholder="🔍 Search all records..." oninput="globalSearchFn(this.value)" style="width:220px;">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="navigate('add')">+ Add Crime</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" class="view active">
+      <div class="metrics-row">
+        <div class="metric-card" style="--card-accent:var(--red)">
+          <div class="metric-label">Total Crimes</div>
+          <div class="metric-value" id="m-total">—</div>
+          <div class="metric-sub" id="m-total-change"></div>
+          <div class="metric-icon">📋</div>
+        </div>
+        <div class="metric-card" style="--card-accent:var(--amber)">
+          <div class="metric-label">Most Common Type</div>
+          <div class="metric-value" id="m-type" style="font-size:15px;line-height:1.4;margin-top:4px;">—</div>
+          <div class="metric-sub" id="m-type-count"></div>
+          <div class="metric-icon">⚠️</div>
+        </div>
+        <div class="metric-card" style="--card-accent:var(--purple)">
+          <div class="metric-label">Most Affected Area</div>
+          <div class="metric-value" id="m-loc" style="font-size:15px;line-height:1.4;margin-top:4px;">—</div>
+          <div class="metric-sub" id="m-loc-count"></div>
+          <div class="metric-icon">📍</div>
+        </div>
+        <div class="metric-card" style="--card-accent:var(--teal)">
+          <div class="metric-label">This Month</div>
+          <div class="metric-value" id="m-month">—</div>
+          <div class="metric-sub" id="m-month-sub"></div>
+          <div class="metric-icon">📅</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Crime Trends Over Time</div>
+              <div class="chart-sub">Monthly incident count · Last 12 months</div>
+            </div>
+            <span class="badge badge-blue">LIVE</span>
+          </div>
+          <div class="chart-area"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">By Crime Type</div>
+              <div class="chart-sub">Distribution</div>
+            </div>
+          </div>
+          <div class="chart-area"><canvas id="typeChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Crimes by Location</div>
+              <div class="chart-sub">Top 8 locations ranked by incident count</div>
+            </div>
+          </div>
+          <div class="chart-area"><canvas id="locChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Top Hotspots</div>
+              <div class="chart-sub">Ranked by frequency</div>
+            </div>
+          </div>
+          <ul class="hotspot-list" id="hotspotList"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRIMES VIEW -->
+    <div id="view-crimes" class="view">
+      <div class="filter-bar">
+        <select class="filter-select" id="filterType" onchange="applyFilters()">
+          <option value="">All Types</option>
+        </select>
+        <select class="filter-select" id="filterLoc" onchange="applyFilters()">
+          <option value="">All Locations</option>
+        </select>
+        <input type="date" id="filterFrom" onchange="applyFilters()" title="From date">
+        <input type="date" id="filterTo" onchange="applyFilters()" title="To date">
+        <button class="btn btn-sm" onclick="clearFilters()">Clear Filters</button>
+        <div style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--mono);" id="recordCount"></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Crime Records</div>
+          <input class="search-input" placeholder="Search records..." oninput="applyFilters()" id="tableSearch">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Crime Type</th>
+              <th>Location</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="crimeTableBody"></tbody>
+        </table>
+        <div id="crimeTableEmpty" class="no-data" style="display:none">No records match your filters.</div>
+      </div>
+    </div>
+
+    <!-- ADD CRIME VIEW -->
+    <div id="view-add" class="view">
+      <div class="form-card">
+        <div style="margin-bottom:20px;">
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Add New Crime Record</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">All fields marked with * are required. Data is saved to MySQL backend.</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Crime Type *</label>
+            <select class="form-select" id="f-type">
+              <option value="">Select type...</option>
+              <option>Theft</option><option>Assault</option><option>Burglary</option>
+              <option>Robbery</option><option>Vandalism</option><option>Fraud</option>
+              <option>Drug Offense</option><option>Homicide</option><option>Kidnapping</option>
+              <option>Cybercrime</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Location *</label>
+            <select class="form-select" id="f-location">
+              <option value="">Select location...</option>
+              <option>Downtown</option><option>Midtown</option><option>North District</option>
+              <option>South District</option><option>East Side</option><option>West Side</option>
+              <option>Harbor Area</option><option>Business Park</option><option>University Quarter</option>
+              <option>Riverside</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" class="form-input" id="f-date">
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" class="form-input" id="f-time">
+          </div>
+          <div class="form-group">
+            <label>Severity</label>
+            <select class="form-select" id="f-severity">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-select" id="f-status">
+              <option value="Open">Open</option>
+              <option value="Under Investigation">Under Investigation</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea class="form-textarea" id="f-desc" placeholder="Enter incident description..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="submitBtn" onclick="addCrime()">Submit Record</button>
+          <button class="btn" onclick="clearForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS VIEW -->
+    <div id="view-analysis" class="view">
+      <div class="analysis-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Time-Based Pattern</div>
+              <div class="chart-sub">Crimes by hour of day</div>
+            </div>
+          </div>
+          <div class="chart-area"><canvas id="hourChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Day of Week</div>
+              <div class="chart-sub">Weekly distribution</div>
+            </div>
+          </div>
+          <div class="chart-area"><canvas id="dayChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:14px;">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Crime Type × Location Correlation</div>
+            <div class="chart-sub">Which crime types appear in which areas</div>
+          </div>
+        </div>
+        <div class="chart-area" style="height:250px;"><canvas id="corrChart"></canvas></div>
+      </div>
+
+      <div class="insight-box">
+        <div class="insight-title">🧠 Pattern Insights</div>
+        <div class="insight-text" id="insightText">Loading insights...</div>
+      </div>
+    </div>
+
+    <!-- HEATMAP VIEW -->
+    <div id="view-heatmap" class="view">
+      <div class="chart-card" style="margin-bottom:14px;">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Activity Heatmap</div>
+            <div class="chart-sub">Crimes by day of week vs hour of day</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:10px;font-family:var(--mono);color:var(--text3);">
+            <div style="display:flex;align-items:center;gap:3px;">
+              <div style="width:10px;height:10px;border-radius:2px;background:var(--bg4);"></div> Low
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;">
+              <div style="width:10px;height:10px;border-radius:2px;background:#7c3aed;"></div> Mid
+            </div>
+            <div style="display:flex;align-items:center;gap:3px;">
+              <div style="width:10px;height:10px;border-radius:2px;background:#f05252;"></div> High
+            </div>
+          </div>
+        </div>
+        <div id="heatmapContainer" style="padding:8px 0;"></div>
+      </div>
+      <div class="analysis-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div><div class="chart-title">Peak Hours</div><div class="chart-sub">Top 5 most active hours</div></div>
+          </div>
+          <ul class="hotspot-list" id="peakHourList"></ul>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div><div class="chart-title">Peak Days</div><div class="chart-sub">Activity by day</div></div>
+          </div>
+          <ul class="hotspot-list" id="peakDayList"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS VIEW -->
+    <div id="view-reports" class="view">
+      <div class="report-grid">
+        <div class="report-card" onclick="generateReport('summary')">
+          <div class="report-icon">📊</div>
+          <div class="report-name">Executive Summary</div>
+          <div class="report-desc">High-level overview of all crime statistics and key metrics</div>
+        </div>
+        <div class="report-card" onclick="generateReport('hotspot')">
+          <div class="report-icon">🔥</div>
+          <div class="report-name">Hotspot Report</div>
+          <div class="report-desc">Detailed breakdown of high-crime locations and risk zones</div>
+        </div>
+        <div class="report-card" onclick="generateReport('trend')">
+          <div class="report-icon">📈</div>
+          <div class="report-name">Trend Analysis</div>
+          <div class="report-desc">Month-over-month trends, seasonal patterns and forecasts</div>
+        </div>
+        <div class="report-card" onclick="generateReport('type')">
+          <div class="report-icon">🗂️</div>
+          <div class="report-name">Type Distribution</div>
+          <div class="report-desc">Breakdown of crime categories with comparisons</div>
+        </div>
+        <div class="report-card" onclick="generateReport('time')">
+          <div class="report-icon">🕐</div>
+          <div class="report-name">Time Pattern Report</div>
+          <div class="report-desc">Peak hours, days, and seasonal crime activity</div>
+        </div>
+        <div class="report-card" onclick="generateReport('sql')">
+          <div class="report-icon">🗄️</div>
+          <div class="report-name">SQL Query Log</div>
+          <div class="report-desc">View the underlying SQL queries powering this analysis</div>
+        </div>
+      </div>
+
+      <div id="reportOutput" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title" id="reportTitle">Report</div>
+            <button class="btn btn-sm" onclick="document.getElementById('reportOutput').style.display='none'">Close</button>
+          </div>
+          <div id="reportContent" style="padding:18px;font-size:12.5px;color:var(--text2);line-height:1.8;font-family:var(--mono);white-space:pre-wrap;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Edit Crime Record</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="modal-form-grid">
+        <div class="form-group">
+          <label>Crime Type</label>
+          <select class="form-select" id="edit-type">
+            <option>Theft</option><option>Assault</option><option>Burglary</option>
+            <option>Robbery</option><option>Vandalism</option><option>Fraud</option>
+            <option>Drug Offense</option><option>Homicide</option><option>Kidnapping</option>
+            <option>Cybercrime</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <select class="form-select" id="edit-location">
+            <option>Downtown</option><option>Midtown</option><option>North District</option>
+            <option>South District</option><option>East Side</option><option>West Side</option>
+            <option>Harbor Area</option><option>Business Park</option><option>University Quarter</option>
+            <option>Riverside</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" class="form-input" id="edit-date">
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" class="form-input" id="edit-time">
+        </div>
+        <div class="form-group">
+          <label>Severity</label>
+          <select class="form-select" id="edit-severity">
+            <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-select" id="edit-status">
+            <option>Open</option><option>Under Investigation</option><option>Resolved</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Description</label>
+          <textarea class="form-textarea" id="edit-desc"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================
+   CONFIG — change this to your backend URL if needed
+   ============================ */
+const API_BASE = 'http://localhost:5000';
+
+/* ============================
+   IN-MEMORY DB
+   ============================ */
+let DB = { crimes: [] };
+
+/* ============================
+   LOAD FROM BACKEND
+   ============================ */
+async function loadCrimes() {
+  try {
+    const response = await fetch(`${API_BASE}/crimes`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    DB.crimes = data;
+    document.getElementById('connStatus').textContent = '● Connected';
+    document.getElementById('connStatus').style.color = 'var(--green)';
+    return true;
+  } catch (err) {
+    console.error('Failed to load crimes:', err);
+    document.getElementById('connStatus').textContent = '● Disconnected';
+    document.getElementById('connStatus').style.color = 'var(--red)';
+    showToast('⚠️ Could not reach backend. Check that your server is running on ' + API_BASE);
+    return false;
+  }
+}
+
+/* ============================
+   ADD CRIME — posts to backend, then reloads
+   ============================ */
+async function addCrime() {
+  const type     = document.getElementById('f-type').value;
+  const location = document.getElementById('f-location').value;
+  const date     = document.getElementById('f-date').value;
+  const time     = document.getElementById('f-time').value;
+  const severity = document.getElementById('f-severity').value;
+  const status   = document.getElementById('f-status').value;
+  const desc     = document.getElementById('f-desc').value;
+
+  if (!type || !location || !date) {
+    showToast('⚠️ Please fill in Crime Type, Location and Date.');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Saving...';
+
+  // Build payload — field names match what your Flask /addcrime route expects
+  const payload = {
+    crime_type: type,   // matches your backend column name
+    location:   location,
+    date:       date,
+    time:       time,
+    severity:   severity,
+    status:     status,
+    description: desc   // note: your backend may use 'description' or 'desc' — adjust here
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/addcrime`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Server error ${response.status}: ${errText}`);
+    }
+
+    // Reload fresh data from backend so the new record appears
+    await loadCrimes();
+    populateFilters();
+    clearForm();
+    showToast('✅ Crime record saved to database.');
+  } catch (err) {
+    console.error('addCrime failed:', err);
+    showToast('❌ Failed to save: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Record';
+  }
+}
+
+function clearForm() {
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-location').value = '';
+  document.getElementById('f-date').value = '';
+  document.getElementById('f-time').value = '';
+  document.getElementById('f-severity').value = 'Medium';
+  document.getElementById('f-status').value = 'Open';
+  document.getElementById('f-desc').value = '';
+}
+
+/* ============================
+   DELETE
+   ============================ */
+async function deleteCrime(id) {
+  if (!confirm('Delete this record permanently?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/crimes/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadCrimes();
+    applyFilters();
+    showToast('🗑️ Record deleted.');
+  } catch (err) {
+    // Fallback: remove locally if backend delete endpoint doesn't exist yet
+    DB.crimes = DB.crimes.filter(c => c.id !== id);
+    applyFilters();
+    showToast('🗑️ Record removed (local only — add DELETE /crimes/:id to backend to persist).');
+  }
+}
+
+/* ============================
+   EDIT / UPDATE
+   ============================ */
+function openEdit(id) {
+  const c = DB.crimes.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('edit-id').value = id;
+  // Support both 'type' and 'crime_type' field names from backend
+  document.getElementById('edit-type').value     = c.type || c.crime_type || '';
+  document.getElementById('edit-location').value = c.location || '';
+  document.getElementById('edit-date').value     = (c.date || '').substring(0,10);
+  document.getElementById('edit-time').value     = c.time || '';
+  document.getElementById('edit-severity').value = c.severity || 'Medium';
+  document.getElementById('edit-status').value   = c.status || 'Open';
+  document.getElementById('edit-desc').value     = c.desc || c.description || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+async function saveEdit() {
+  const id = parseInt(document.getElementById('edit-id').value);
+  const payload = {
+    crime_type:  document.getElementById('edit-type').value,
+    location:    document.getElementById('edit-location').value,
+    date:        document.getElementById('edit-date').value,
+    time:        document.getElementById('edit-time').value,
+    severity:    document.getElementById('edit-severity').value,
+    status:      document.getElementById('edit-status').value,
+    description: document.getElementById('edit-desc').value
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/crimes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadCrimes();
+  } catch (err) {
+    // Fallback: update locally
+    const c = DB.crimes.find(x => x.id === id);
+    if (c) {
+      c.type = payload.crime_type; c.location = payload.location;
+      c.date = payload.date; c.time = payload.time;
+      c.severity = payload.severity; c.status = payload.status;
+      c.desc = payload.description;
+    }
+  }
+  closeModal();
+  applyFilters();
+  showToast('✅ Record updated.');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+/* ============================
+   ANALYTICS QUERIES (in-memory)
+   ============================ */
+function getCrimeField(c, field) {
+  // Handle both 'type' and 'crime_type' from different backends
+  if (field === 'type') return c.type || c.crime_type || 'Unknown';
+  if (field === 'desc') return c.desc || c.description || '';
+  return c[field] || '';
+}
+
+function queryHotspots() {
+  const counts = {};
+  DB.crimes.forEach(c => { const l = getCrimeField(c,'location'); counts[l] = (counts[l]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([location,count])=>({location,count}));
+}
+
+function queryByType() {
+  const counts = {};
+  DB.crimes.forEach(c => { const t = getCrimeField(c,'type'); counts[t] = (counts[t]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([type,count])=>({type,count}));
+}
+
+function queryByMonth() {
+  const counts = {};
+  DB.crimes.forEach(c => {
+    const m = (c.date||'').substring(0,7);
+    if(m) counts[m] = (counts[m]||0)+1;
+  });
+  return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0])).map(([month,count])=>({month,count}));
+}
+
+function queryByHour() {
+  const counts = new Array(24).fill(0);
+  DB.crimes.forEach(c => {
+    if(c.time) counts[parseInt(c.time.split(':')[0])]++;
+  });
+  return counts;
+}
+
+function queryByDay() {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const counts = new Array(7).fill(0);
+  DB.crimes.forEach(c => {
+    if(c.date) counts[new Date(c.date).getDay()]++;
+  });
+  return { labels: days, data: counts };
+}
+
+function queryCorrMatrix() {
+  const types = [...new Set(DB.crimes.map(c=>getCrimeField(c,'type')))].slice(0,6);
+  const locs  = queryHotspots().slice(0,6).map(h=>h.location);
+  const matrix = {};
+  locs.forEach(l => { matrix[l] = {}; types.forEach(t => matrix[l][t] = 0); });
+  DB.crimes.forEach(c => {
+    const t = getCrimeField(c,'type'), l = getCrimeField(c,'location');
+    if(matrix[l] && types.includes(t)) matrix[l][t]++;
+  });
+  return { types, locs, matrix };
+}
+
+/* ============================
+   CHART INSTANCES
+   ============================ */
+let charts = {};
+
+function destroyChart(id) {
+  if(charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+/* ============================
+   RENDER DASHBOARD
+   ============================ */
+function renderDashboard() {
+  if (!DB.crimes.length) return;
+  const total = DB.crimes.length;
+  document.getElementById('m-total').textContent = total;
+
+  const byType = queryByType();
+  if(byType[0]) {
+    document.getElementById('m-type').textContent = byType[0].type;
+    document.getElementById('m-type-count').textContent = byType[0].count + ' incidents';
+  }
+
+  const hotspots = queryHotspots();
+  if(hotspots[0]) {
+    document.getElementById('m-loc').textContent = hotspots[0].location;
+    document.getElementById('m-loc-count').textContent = hotspots[0].count + ' incidents';
+  }
+
+  const thisMonth = new Date().toISOString().substring(0,7);
+  const monthCount = DB.crimes.filter(c=>(c.date||'').startsWith(thisMonth)).length;
+  document.getElementById('m-month').textContent = monthCount;
+  document.getElementById('m-month-sub').textContent = 'incidents this month';
+
+  // Trend chart
+  destroyChart('trend');
+  const monthly = queryByMonth().slice(-12);
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: monthly.map(m => MONTH_NAMES[parseInt(m.month.split('-')[1])-1]),
+      datasets: [{
+        label: 'Crimes',
+        data: monthly.map(m=>m.count),
+        borderColor: '#4f6ef7',
+        backgroundColor: 'rgba(79,110,247,0.08)',
+        tension: 0.4, fill: true,
+        pointBackgroundColor: '#4f6ef7',
+        pointRadius: 4, pointHoverRadius: 6, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#565a72',font:{size:10,family:"'IBM Plex Mono'"}} },
+        y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#565a72',font:{size:10,family:"'IBM Plex Mono'"}} }
+      }
+    }
+  });
+
+  // Type donut
+  destroyChart('type');
+  const TYPE_COLORS = ['#4f6ef7','#f05252','#f59e0b','#10b981','#8b5cf6','#06b6d4','#f97316','#ec4899','#6366f1','#84cc16'];
+  charts.type = new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: byType.map(t=>t.type),
+      datasets: [{ data: byType.map(t=>t.count), backgroundColor: TYPE_COLORS, borderWidth: 2, borderColor: '#13161e' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+  });
+
+  // Location bar
+  destroyChart('loc');
+  const top8 = hotspots.slice(0,8);
+  charts.loc = new Chart(document.getElementById('locChart'), {
+    type: 'bar',
+    data: {
+      labels: top8.map(h=>h.location),
+      datasets: [{
+        label: 'Crimes', data: top8.map(h=>h.count),
+        backgroundColor: top8.map((_,i)=>`rgba(79,110,247,${1-i*0.09})`),
+        borderRadius: 4, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#565a72',font:{size:10}} },
+        y: { grid:{display:false}, ticks:{color:'#8b8fa8',font:{size:11}} }
+      }
+    }
+  });
+
+  // Hotspot list
+  const list = document.getElementById('hotspotList');
+  list.innerHTML = '';
+  const maxH = hotspots[0]?.count || 1;
+  hotspots.slice(0,6).forEach((h,i) => {
+    const pct = Math.round((h.count/maxH)*100);
+    list.innerHTML += `<li class="hotspot-item">
+      <span class="hotspot-rank">#${i+1}</span>
+      <span class="hotspot-name">${h.location}</span>
+      <div class="hotspot-bar-wrap"><div class="hotspot-bar" style="width:${pct}%"></div></div>
+      <span class="hotspot-count">${h.count}</span>
+    </li>`;
+  });
+}
+
+/* ============================
+   RENDER TABLE
+   ============================ */
+function renderTable(data) {
+  const tbody  = document.getElementById('crimeTableBody');
+  const empty  = document.getElementById('crimeTableEmpty');
+  document.getElementById('recordCount').textContent = data.length + ' records';
+
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const severityBadge = {Low:'badge-green',Medium:'badge-amber',High:'badge-red',Critical:'badge-red'};
+  const statusBadge   = {'Open':'badge-red','Under Investigation':'badge-amber','Resolved':'badge-green'};
+
+  tbody.innerHTML = data.map(c => {
+    const type = getCrimeField(c,'type');
+    const loc  = getCrimeField(c,'location');
+    const date = (c.date||'').substring(0,10);
+    return `
+    <tr>
+      <td>#${String(c.id).padStart(4,'0')}</td>
+      <td>${type}</td>
+      <td>${loc}</td>
+      <td>${date}</td>
+      <td>${c.time || '—'}</td>
+      <td><span class="badge ${statusBadge[c.status]||'badge-blue'}">${c.status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-sm" onclick="openEdit(${c.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCrime(${c.id})">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ============================
+   FILTERS
+   ============================ */
+function populateFilters() {
+  const types = [...new Set(DB.crimes.map(c=>getCrimeField(c,'type')))].filter(Boolean).sort();
+  const locs  = [...new Set(DB.crimes.map(c=>getCrimeField(c,'location')))].filter(Boolean).sort();
+  document.getElementById('filterType').innerHTML =
+    '<option value="">All Types</option>' + types.map(t=>`<option>${t}</option>`).join('');
+  document.getElementById('filterLoc').innerHTML =
+    '<option value="">All Locations</option>' + locs.map(l=>`<option>${l}</option>`).join('');
+}
+
+function applyFilters() {
+  const type   = document.getElementById('filterType').value;
+  const loc    = document.getElementById('filterLoc').value;
+  const from   = document.getElementById('filterFrom').value;
+  const to     = document.getElementById('filterTo').value;
+  const search = document.getElementById('tableSearch').value.toLowerCase();
+
+  const data = DB.crimes.filter(c => {
+    const t = getCrimeField(c,'type'), l = getCrimeField(c,'location');
+    const d = (c.date||'').substring(0,10);
+    if(type && t !== type) return false;
+    if(loc  && l !== loc)  return false;
+    if(from && d < from)   return false;
+    if(to   && d > to)     return false;
+    if(search) {
+      const hay = (t + l + d + getCrimeField(c,'desc') + (c.status||'')).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  renderTable(data);
+}
+
+function clearFilters() {
+  ['filterType','filterLoc','filterFrom','filterTo','tableSearch'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  applyFilters();
+}
+
+function globalSearchFn(val) {
+  if(!val) return;
+  navigate('crimes');
+  document.getElementById('tableSearch').value = val;
+  applyFilters();
+}
+
+/* ============================
+   ANALYSIS VIEW
+   ============================ */
+function renderAnalysis() {
+  destroyChart('hour'); destroyChart('day'); destroyChart('corr');
+
+  const hourData = queryByHour();
+  charts.hour = new Chart(document.getElementById('hourChart'), {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:24},(_,i)=>i+':00'),
+      datasets: [{
+        label: 'Crimes', data: hourData,
+        backgroundColor: hourData.map(v => v>8?'#f05252':v>4?'#f59e0b':'#4f6ef7'),
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#565a72',font:{size:9},maxRotation:45} },
+        y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#565a72',font:{size:10}} }
+      }
+    }
+  });
+
+  const dayResult = queryByDay();
+  charts.day = new Chart(document.getElementById('dayChart'), {
+    type: 'bar',
+    data: {
+      labels: dayResult.labels,
+      datasets: [{ label:'Crimes', data:dayResult.data, backgroundColor:'#8b5cf6', borderRadius:4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#565a72',font:{size:11}} },
+        y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#565a72',font:{size:10}} }
+      }
+    }
+  });
+
+  const corr = queryCorrMatrix();
+  const TYPE_COLORS2 = ['#4f6ef7','#f05252','#f59e0b','#10b981','#8b5cf6','#f97316'];
+  charts.corr = new Chart(document.getElementById('corrChart'), {
+    type: 'bar',
+    data: {
+      labels: corr.locs,
+      datasets: corr.types.map((t,i) => ({
+        label: t,
+        data: corr.locs.map(l=>corr.matrix[l][t]||0),
+        backgroundColor: TYPE_COLORS2[i], borderRadius: 2
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#8b8fa8',font:{size:10},boxWidth:10,padding:12 } } },
+      scales: {
+        x: { stacked:true, grid:{display:false}, ticks:{color:'#565a72',font:{size:10}} },
+        y: { stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#565a72',font:{size:10}} }
+      }
+    }
+  });
+
+  const topHour = hourData.indexOf(Math.max(...hourData));
+  const topType = queryByType()[0];
+  const topLoc  = queryHotspots()[0];
+  const dayD    = queryByDay();
+  const topDay  = dayD.labels[dayD.data.indexOf(Math.max(...dayD.data))];
+  document.getElementById('insightText').innerHTML = `
+• Peak crime hour: <strong style="color:var(--text)">${topHour}:00 – ${topHour+1}:00</strong>, suggesting increased patrol coverage during this window.
+
+• Most frequent crime type: <strong style="color:var(--text)">${topType?.type}</strong> (${topType?.count} incidents).
+
+• Highest-risk area: <strong style="color:var(--text)">${topLoc?.location}</strong> with ${topLoc?.count} recorded incidents.
+
+• Crimes peak on <strong style="color:var(--text)">${topDay}</strong>s — weekend enforcement allocation is recommended.`.trim();
+}
+
+/* ============================
+   HEATMAP VIEW
+   ============================ */
+function renderHeatmap() {
+  const days  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours = Array.from({length:24},(_,i)=>i);
+  const grid  = {};
+  days.forEach(d => { grid[d] = new Array(24).fill(0); });
+
+  DB.crimes.forEach(c => {
+    if(!c.date || !c.time) return;
+    const day     = new Date(c.date).getDay();
+    const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][day];
+    if(grid[dayName]) grid[dayName][parseInt(c.time.split(':')[0])]++;
+  });
+
+  let maxVal = 0;
+  days.forEach(d => hours.forEach(h => { if(grid[d][h]>maxVal) maxVal=grid[d][h]; }));
+
+  const container = document.getElementById('heatmapContainer');
+  container.innerHTML = '';
+
+  const colRow = document.createElement('div');
+  colRow.className = 'heatmap-col-labels';
+  hours.forEach(h => {
+    const lbl = document.createElement('div');
+    lbl.className = 'heatmap-col-label';
+    lbl.textContent = h%4===0 ? h+'h' : '';
+    colRow.appendChild(lbl);
+  });
+  container.appendChild(colRow);
+
+  days.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'heatmap-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'heatmap-label';
+    lbl.textContent = d;
+    row.appendChild(lbl);
+    hours.forEach(h => {
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      const v = grid[d][h];
+      const intensity = maxVal>0 ? v/maxVal : 0;
+      if(intensity>0.66) cell.style.background = '#f05252';
+      else if(intensity>0.33) cell.style.background = '#7c3aed';
+      else if(intensity>0) cell.style.background = `rgba(79,110,247,${0.2+intensity*0.6})`;
+      cell.setAttribute('data-tip',`${d} ${h}:00 → ${v} crimes`);
+      row.appendChild(cell);
+    });
+    container.appendChild(row);
+  });
+
+  const hourTotals = queryByHour();
+  const topHours = hourTotals.map((v,i)=>({h:i,v})).sort((a,b)=>b.v-a.v).slice(0,5);
+  document.getElementById('peakHourList').innerHTML = topHours.map((x,i)=>`
+    <li class="hotspot-item">
+      <span class="hotspot-rank">#${i+1}</span>
+      <span class="hotspot-name">${x.h}:00 – ${x.h+1}:00</span>
+      <span class="hotspot-count">${x.v}</span>
+    </li>`).join('');
+
+  const dayR = queryByDay();
+  const dayTotals = dayR.labels.map((d,i)=>({d,v:dayR.data[i]})).sort((a,b)=>b.v-a.v);
+  document.getElementById('peakDayList').innerHTML = dayTotals.map((x,i)=>`
+    <li class="hotspot-item">
+      <span class="hotspot-rank">#${i+1}</span>
+      <span class="hotspot-name">${x.d}</span>
+      <div class="hotspot-bar-wrap"><div class="hotspot-bar" style="width:${Math.round((x.v/dayTotals[0].v)*100)}%;background:var(--purple)"></div></div>
+      <span class="hotspot-count">${x.v}</span>
+    </li>`).join('');
+}
+
+/* ============================
+   REPORTS
+   ============================ */
+function generateReport(type) {
+  const total   = DB.crimes.length;
+  const byType  = queryByType();
+  const hotspots= queryHotspots();
+  const hourData= queryByHour();
+  const topHour = hourData.indexOf(Math.max(...hourData));
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const reports = {
+    summary: {
+      title: '📊 Executive Summary Report',
+      content: `CRIME PATTERN ANALYSIS SYSTEM — EXECUTIVE SUMMARY
+Generated: ${new Date().toLocaleString()}
+================================================================
+
+OVERVIEW
+  Total Incidents Recorded : ${total}
+  Active Locations         : ${[...new Set(DB.crimes.map(c=>getCrimeField(c,'location')))].length}
+  Crime Categories         : ${[...new Set(DB.crimes.map(c=>getCrimeField(c,'type')))].length}
+
+KEY METRICS
+  Most Common Crime Type   : ${byType[0]?.type} (${byType[0]?.count} cases, ${Math.round((byType[0]?.count||0)/total*100)}%)
+  Highest Risk Location    : ${hotspots[0]?.location} (${hotspots[0]?.count} incidents)
+  Peak Hour                : ${topHour}:00 – ${topHour+1}:00
+  Open Cases               : ${DB.crimes.filter(c=>c.status==='Open').length}
+  Resolved Cases           : ${DB.crimes.filter(c=>c.status==='Resolved').length}
+  Under Investigation      : ${DB.crimes.filter(c=>c.status==='Under Investigation').length}
+
+TOP 5 CRIME TYPES
+${byType.slice(0,5).map((t,i)=>`  ${i+1}. ${t.type.padEnd(20)} ${t.count} cases`).join('\n')}`
+    },
+    hotspot: {
+      title: '🔥 Crime Hotspot Report',
+      content: `CRIME HOTSPOT ANALYSIS
+================================================================
+
+HOTSPOT RANKING
+
+${hotspots.map((h,i)=>`  ${String(i+1).padStart(2,'0')}. ${h.location.padEnd(22)} ${h.count.toString().padStart(3)} incidents  [${'█'.repeat(Math.round(h.count/(hotspots[0]?.count||1)*20))}]`).join('\n')}
+
+RECOMMENDATIONS
+  • Deploy additional patrols to ${hotspots[0]?.location} and ${hotspots[1]?.location}
+  • Install CCTV in identified high-risk zones`
+    },
+    sql: {
+      title: '🗄️ SQL Query Reference',
+      content: `SQL SCHEMA & QUERIES
+================================================================
+
+CREATE TABLE crimes (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  crime_type  VARCHAR(50) NOT NULL,
+  location    VARCHAR(100) NOT NULL,
+  date        DATE NOT NULL,
+  time        TIME,
+  severity    ENUM('Low','Medium','High','Critical'),
+  status      ENUM('Open','Under Investigation','Resolved'),
+  description TEXT,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Hotspot query
+SELECT location, COUNT(*) AS crime_count
+FROM crimes GROUP BY location ORDER BY crime_count DESC;
+
+-- Monthly trend
+SELECT DATE_FORMAT(date,'%Y-%m') AS month, COUNT(*) AS total
+FROM crimes GROUP BY month ORDER BY month;
+
+-- Add crime
+INSERT INTO crimes (crime_type,location,date,time,severity,status,description)
+VALUES (?,?,?,?,?,?,?);`
+    },
+    trend: {
+      title: '📈 Trend Analysis Report',
+      content: `CRIME TREND ANALYSIS
+================================================================
+
+MONTHLY BREAKDOWN
+${queryByMonth().map(m=>{
+  const [y,mo]=m.month.split('-');
+  return `  ${MONTH_NAMES[parseInt(mo)-1]} ${y}  ${'█'.repeat(m.count)} ${m.count}`;
+}).join('\n')}`
+    },
+    type: {
+      title: '🗂️ Crime Type Distribution',
+      content: `CRIME TYPE DISTRIBUTION REPORT
+================================================================
+
+${byType.map((t,i)=>{
+  const pct = Math.round(t.count/total*100);
+  return `  ${String(i+1).padStart(2,'0')}. ${t.type.padEnd(20)} ${String(t.count).padStart(3)} cases  ${String(pct).padStart(3)}%  ${'█'.repeat(Math.round(pct/2))}`;
+}).join('\n')}`
+    },
+    time: {
+      title: '🕐 Time Pattern Report',
+      content: `TEMPORAL CRIME PATTERN ANALYSIS
+================================================================
+
+PEAK HOURS
+${queryByHour().map((v,h)=>`  ${String(h).padStart(2,'0')}:00  ${'█'.repeat(v)}  ${v}`).join('\n')}
+
+DAY OF WEEK
+${queryByDay().labels.map((d,i)=>{
+  const v=queryByDay().data[i];
+  return `  ${d.padEnd(8)} ${'█'.repeat(Math.round(v/2))} ${v}`;
+}).join('\n')}`
+    }
+  };
+
+  const r = reports[type];
+  document.getElementById('reportTitle').textContent = r.title;
+  document.getElementById('reportContent').textContent = r.content;
+  document.getElementById('reportOutput').style.display = 'block';
+  document.getElementById('reportOutput').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ============================
+   NAVIGATION
+   ============================ */
+const pageInfo = {
+  dashboard: { title: 'Dashboard',         crumb: 'system / overview' },
+  crimes:    { title: 'Crime Records',      crumb: 'system / records' },
+  add:       { title: 'Add Crime',          crumb: 'system / records / add' },
+  analysis:  { title: 'Pattern Analysis',   crumb: 'system / analytics / patterns' },
+  heatmap:   { title: 'Activity Heatmap',   crumb: 'system / analytics / heatmap' },
+  reports:   { title: 'Reports',            crumb: 'system / reports' }
+};
+
+function navigate(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const el = document.getElementById('view-' + view);
+  if (el) el.classList.add('active');
+
+  const keyMap = { dashboard:'dashboard', crimes:'crime records', add:'add crime', analysis:'pattern', heatmap:'heatmap', reports:'reports' };
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(keyMap[view] || view))
+      n.classList.add('active');
+  });
+
+  const info = pageInfo[view] || { title: view, crumb: 'system' };
+  document.getElementById('pageTitle').textContent = info.title;
+  document.getElementById('pageCrumb').textContent = info.crumb;
+
+  if (view === 'dashboard') renderDashboard();
+  if (view === 'crimes')    { populateFilters(); applyFilters(); }
+  if (view === 'analysis')  renderAnalysis();
+  if (view === 'heatmap')   renderHeatmap();
+}
+
+/* ============================
+   TOAST
+   ============================ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ============================
+   BOOT
+   ============================ */
+window.onload = async function () {
+  const ok = await loadCrimes();
+  if (ok) {
+    populateFilters();
+    renderDashboard();
+  }
+};
+</script>
+</body>
+</html>
